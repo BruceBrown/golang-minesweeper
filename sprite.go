@@ -11,7 +11,7 @@ type Renderer interface {
 type MouseHandler interface {
 	hitTest(event *sdl.MouseButtonEvent) bool
 	handleEvent(event *sdl.MouseButtonEvent)
-	boundingBox() *sdl.Rect
+	//boundingBox() *sdl.Rect
 }
 
 type TileListener interface {
@@ -169,7 +169,7 @@ type Grid struct {
 
 	Sprite
 
-	tiles     *TileMatrix
+	tiles     []*Tile
 	minefield *Minefield
 }
 
@@ -177,9 +177,14 @@ func createGrid(context *GameContext) *Grid {
 	grid := new(Grid)
 	grid.context = context
 	boundingBox := context.layout.grid()
-	grid.tiles = createTileMatrix(context)
 	grid.minefield = createMinefield(context)
-	for index, tile := range grid.tiles.tiles {
+	tiles := context.layout.options.tiles()
+	for i := 0; i < tiles; i++ {
+		tile := createTile(context)
+		grid.tiles = append(grid.tiles, tile)
+	}
+
+	for index, tile := range grid.tiles {
 		adjacentMines := grid.minefield.adjacentMines(index)
 		isMine := grid.minefield.mineAt(index)
 		rect := context.layout.tile(boundingBox, index)
@@ -191,7 +196,7 @@ func createGrid(context *GameContext) *Grid {
 }
 
 func (panel *Grid) render(surface *sdl.Surface) {
-	for _, tile := range panel.tiles.tiles {
+	for _, tile := range panel.tiles {
 		tile.render(surface)
 	}
 }
@@ -207,19 +212,19 @@ func (grid *Grid) hitTest(event *sdl.MouseButtonEvent) bool {
 func (grid *Grid) gameStateChanged(state string) {
 	if state == gameStateInit {
 		grid.minefield.reset()
-		for index, tile := range grid.tiles.tiles {
+		for index, tile := range grid.tiles {
 			isMine := grid.minefield.mineAt(index)
 			adjacentMines := grid.minefield.adjacentMines(index)
 			tile.reset(isMine, adjacentMines)
 		}
 	}
-	for _, tile := range grid.tiles.tiles {
+	for _, tile := range grid.tiles {
 		tile.gameStateChanged(state)
 	}
 }
 
 func (grid *Grid) flagStateChanged(exhausted bool) {
-	for _, tile := range grid.tiles.tiles {
+	for _, tile := range grid.tiles {
 		tile.flagStateChanged(exhausted)
 	}
 }
@@ -229,17 +234,17 @@ func (grid *Grid) handleEvent(event *sdl.MouseButtonEvent) {
 	column := (event.X - box.X) / tileSide
 	row := (event.Y - box.Y) / tileSide
 	index := grid.context.layout.options.index(int(row), int(column))
-	grid.tiles.tiles[index].handleEvent(event)
+	grid.tiles[index].handleEvent(event)
 }
 
 func (grid *Grid) setListeners(topLevelListeners []TileListener) {
 	options := grid.context.layout.options
 	// build a mesh of adjacent tile listeners
-	for index, tile := range grid.tiles.tiles {
+	for index, tile := range grid.tiles {
 		listeners := topLevelListeners
 		fn := func(r int, c int) {
 			index := options.index(r, c)
-			tile := grid.tiles.tiles[index]
+			tile := grid.tiles[index]
 			listeners = append(listeners, tile)
 		}
 		options.forEachNeighbor(index, fn)
@@ -370,25 +375,4 @@ func (tile *Tile) tryToggleFlag() {
 func (tile *Tile) reset(isMine bool, adjacentMines int) {
 	tile.isMine = isMine
 	tile.adjacentMines = adjacentMines
-}
-
-type TileMatrix struct {
-	Sprite
-
-	rows  int
-	cols  int
-	tiles []*Tile
-}
-
-func createTileMatrix(context *GameContext) *TileMatrix {
-	rows, columns := context.layout.rowsAndColumns()
-	tileMatrix := new(TileMatrix)
-	tileMatrix.context = context
-	tileMatrix.rows = rows
-	tileMatrix.cols = columns
-	for i := 0; i < rows*columns; i++ {
-		tile := createTile(context)
-		tileMatrix.tiles = append(tileMatrix.tiles, tile)
-	}
-	return tileMatrix
 }

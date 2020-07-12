@@ -11,7 +11,6 @@ type Runner interface {
 type GameContext struct {
 	layout    *Layout
 	imageRepo *ImageRepo
-	surface   *sdl.Surface
 }
 
 func (context *GameContext) withLayout(layout *Layout) *GameContext {
@@ -24,21 +23,14 @@ func (context *GameContext) withImageRepo(imageRepo *ImageRepo) *GameContext {
 	return context
 }
 
-func (context *GameContext) withSurface(surface *sdl.Surface) *GameContext {
-	context.surface = surface
-	return context
-}
-
 type Game struct {
 	Runner
-	MouseHandler
 
 	context *GameContext
 	window  *sdl.Window
 	sprites []SpriteHandler
 }
 
-// Add a renderer layer to the game.
 func (game *Game) addSprite(sprite SpriteHandler) {
 	game.sprites = append(game.sprites, sprite)
 }
@@ -64,6 +56,7 @@ func CreateGame(context *GameContext, window *sdl.Window) *Game {
 	grid := createGrid(context)
 	game.addSprite(grid)
 
+	// wire in listeners
 	gameStateListeners := []GameStateListener{grid, timer, flagCounter}
 	button.listeners = gameStateListeners
 

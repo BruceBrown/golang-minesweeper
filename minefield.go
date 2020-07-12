@@ -12,6 +12,7 @@ type Miner interface {
 
 type Minefield struct {
 	Miner
+	
 	context *GameContext
 	mines   map[int]int
 }

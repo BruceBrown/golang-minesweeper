@@ -11,8 +11,6 @@ func skillLevel() string {
 }
 
 type Options struct {
-	//func tiles() int { return rows * columns }
-	//func blanks() int { return tiles() - mines }
 	level   string
 	rows    int
 	columns int

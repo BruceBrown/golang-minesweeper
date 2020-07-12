@@ -4,6 +4,11 @@
 *.dll
 *.so
 *.dylib
+.DS_Store
+golang-minesweeper
+minesweeper
+packrd
+main-packr.go
 
 # Test binary, built with `go test -c`
 *.test
