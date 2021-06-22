@@ -1,21 +1,22 @@
 package main
 
 import (
-	"github.com/gobuffalo/packr/v2"
+	"io/ioutil"
+
+	"github.com/markbates/pkger"
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
 type ImageRepo struct {
-	box               *packr.Box
 	images            map[string]*sdl.Surface
 	adjacentTileNames []string
 	digitNames        []string
 }
 
 func CreateImageRepo(folder string) *ImageRepo {
+	_ = pkger.Dir("/images")
 	repo := new(ImageRepo)
-	repo.box = packr.New("myBox", folder)
 	repo.images = make(map[string]*sdl.Surface)
 	repo.adjacentTileNames = []string{
 		"tile_none", "tile_one", "tile_two", "tile_three", "tile_four",
@@ -44,21 +45,18 @@ func (repo *ImageRepo) imageForDigit(digit int) *sdl.Surface {
 	return repo.imageForName(repo.digitNames[digit])
 }
 
+// get the png from the packager, create a sdl surface from it and return it
 func load(repo *ImageRepo, name string) *sdl.Surface {
-	/*
-		file := repo.folder
-		file += "minesweeper_"
-		file += name
-		file += ".bmp"
-		image, err := img.Load(file)
-	*/
-	file := "images/minesweeper_" + name + ".png"
-
-	bytes, err := repo.box.Find(file)
+	file := "/images/minesweeper_" + name + ".png"
+	f, err := pkger.Open(file)
 	if err != nil {
 		panic(err)
 	}
-
+	defer f.Close()
+	bytes, err := ioutil.ReadAll(f)
+	if err != nil {
+		panic(err)
+	}
 	ops, err := sdl.RWFromMem(bytes)
 	if err != nil {
 		panic(err)
